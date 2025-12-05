@@ -1,1 +1,82 @@
-# Playbook backups diarios
+Backups diarios
+1- Playbook de backups: ansible/playbooks/backup_configs.yml
+
+
+---
+# Backups diarios de switches (IOS-XE), ASA y WLC
+# Salvan outputs en outputs/backups/<familia>/YYYY-MM-DD/
+
+- name: Backup IOS-XE running-config (Agg + Access)
+  hosts: agg,access
+  gather_facts: no
+  collections: [ cisco.ios ]
+  vars:
+    bk_dir: "../../outputs/backups/switches/{{ ansible_date_time.date }}"
+  tasks:
+    - name: Crear carpeta destino
+      file:
+        path: "{{ bk_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: show running-config
+      ios_command:
+        commands: [ "show running-config" ]
+      register: run
+
+    - name: Guardar backup
+      copy:
+        content: "{{ run.stdout[0] }}"
+        dest: "{{ bk_dir }}/{{ inventory_hostname }}.cfg"
+
+- name: Backup ASA (show run)
+  hosts: firewall
+  gather_facts: no
+  vars:
+    bk_dir_fw: "../../outputs/backups/firewall/{{ ansible_date_time.date }}"
+  tasks:
+    - file: { path: "{{ bk_dir_fw }}", state: directory, mode: "0755" }
+    - name: Ejecutar backup wrapper (Netmiko)
+      command: >
+        python3 ../../scripts/backup.py
+        --device asa
+        --host {{ ansible_host }}
+        --out {{ bk_dir_fw }}/{{ inventory_hostname }}.cfg
+
+- name: Backup WLC 9800 (CLI export simple)
+  hosts: wlc
+  gather_facts: no
+  vars:
+    bk_dir_wlc: "../../outputs/backups/wlc/{{ ansible_date_time.date }}"
+  tasks:
+    - file: { path: "{{ bk_dir_wlc }}", state: directory, mode: "0755" }
+
+    # Opción RESTCONF: GET de config global (payload operacional)
+    # Para simplificar el entregable usamos CLI show critical
+    - name: Show running-config fragments
+      command: >
+        python3 ../../scripts/backup.py
+        --device wlc
+        --host {{ ansible_host }}
+        --out {{ bk_dir_wlc }}/{{ inventory_hostname }}.txt
+
+- name: Generar resumen JSON
+  hosts: localhost
+  gather_facts: yes
+  vars:
+    out_summary: "../../outputs/reports/backups/{{ ansible_date_time.date }}/backup_summary.json"
+  tasks:
+    - file: { path: "{{ out_summary | dirname }}", state: directory, mode: "0755" }
+    - copy:
+        dest: "{{ out_summary }}"
+        content: |
+          {
+            "date": "{{ ansible_date_time.date }}",
+            "switches_dir": "outputs/backups/switches/{{ ansible_date_time.date }}",
+            "firewall_dir": "outputs/backups/firewall/{{ ansible_date_time.date }}",
+            "wlc_dir": "outputs/backups/wlc/{{ ansible_date_time.date }}",
+            "note": "Validación y restauración ver docs/RUNBOOK_RESTORE.md"
+          }
+
+Motivo: Centraliza diariamente en carpetas por familia de equipo + fecha, asegurando recuperación sencilla (cada archivo por dispositivo, formato plano CLI).
+IOS‑XE (ios_command) y ASA/WLC vía scripts wrapper para compatibilidad.
