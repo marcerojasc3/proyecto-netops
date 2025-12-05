@@ -1,1 +1,63 @@
-# Playbook validación EC y VLAN
+Validación automática (EtherChannel + reachability VLAN)
+ansible/playbooks/validate_ec_and_vlan.yml
+
+
+---
+- name: Validate EtherChannel (Aggregation)
+  hosts: agg
+  gather_facts: no
+  collections: [ cisco.ios ]
+  tasks:
+    - ios_command:
+        commands:
+          - "show etherchannel summary"
+          - "show interfaces trunk"
+      register: agg_show
+    - debug: var=agg_show.stdout
+
+- name: Validate EtherChannel (Access)
+  hosts: access
+  gather_facts: no
+  collections: [ cisco.ios ]
+  tasks:
+    - ios_command:
+        commands:
+          - "show etherchannel summary"
+          - "show interfaces trunk"
+      register: acc_show
+    - debug: var=acc_show.stdout
+
+- name: Ping ASA gateways from Aggregation
+  hosts: agg
+  gather_facts: no
+  collections: [ cisco.ios ]
+  vars_files: [ ../inventory/group_vars/firewall.yml ]
+  tasks:
+    - ios_ping:
+        dest: "{{ (vlans | selectattr('id','equalto',900) | list)[0].ip }}"
+      register: ping900
+    - ios_ping:
+        dest: "{{ (vlans | selectattr('id','equalto',901) | list)[0].ip }}"
+      register: ping901
+    - ios_ping:
+        dest: "{{ (vlans | selectattr('id','equalto',304) | list)[0].ip }}"
+      register: ping304
+
+    - debug:
+        msg:
+          - "VLAN900 -> {{ 'OK' if ping900.success else 'FAIL' }}"
+          - "VLAN901 -> {{ 'OK' if ping901.success else 'FAIL' }}"
+          - "VLAN304 -> {{ 'OK' if ping304.success else 'FAIL' }}"
+
+- name: Validate ASA Port-channel
+  hosts: firewall
+  gather_facts: no
+  tasks:
+    - command: >
+        python3 ../../scripts/validate.py
+        --device asa --show "show port-channel summary"
+      register: asa_po
+
+Nota:
+Comandos de validación en C9500/C9200 (show etherchannel summary, show interfaces trunk) y en ASA (show port-channel summary) son estándar de operación para confirmar estado de Port‑channel y trunks.
+
