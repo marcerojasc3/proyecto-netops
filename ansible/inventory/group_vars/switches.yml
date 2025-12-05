@@ -1,1 +1,35 @@
-# Variables switches
+ansible/inventory/group_vars/switches.yml
+
+# C9500 -> ASA () Po10 en ambos stacks
+agg_fw_pc:
+  pc_id: 10
+  pc_desc: Uplink-to-ASA
+  allowed_vlans: "900,901,304"
+  members_stack1: [ "TenGigabitEthernet1/0/1", "TenGigabitEthernet1/0/2" ]
+  members_stack2: [ "TenGigabitEthernet1/0/3", "TenGigabitEthernet1/0/4" ]
+  lacp_mode: active
+
+# C9200 -> C9500 (uplink) Acceso to Agregacion
+uplink_pc:
+  pc_id: 20
+  pc_desc: Uplink-to-Aggregation
+  allowed_vlans: "900,901,304"
+  members: [ "GigabitEthernet1/0/1", "GigabitEthernet2/0/1" ]
+  lacp_mode: active
+
+# AP ports con port-security sticky
+ap_port_mode: access
+ap_access_vlan: 901
+violation_action: restrict
+max_macs: 1
+ap_ports:
+  - GigabitEthernet1/0/2
+  - GigabitEthernet1/0/3
+  - GigabitEthernet1/0/4
+  - GigabitEthernet1/0/5
+  - GigabitEthernet1/0/6
+  - GigabitEthernet1/0/7
+  - GigabitEthernet1/0/8
+  - GigabitEthernet1/0/9
+  - GigabitEthernet1/0/10
+  - GigabitEthernet1/0/X
