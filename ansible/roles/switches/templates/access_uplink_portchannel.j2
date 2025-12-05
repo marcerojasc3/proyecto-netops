@@ -1,1 +1,23 @@
-# Template uplink acceso
+C9200 → C9500 – uplink Po20
+ansible/roles/switches/templates/access_uplink_portchannel.j2
+
+
+interface Port-channel{{ uplink_pc.pc_id }}
+ description {{ uplink_pc.pc_desc }}
+ switchport
+ switchport mode trunk
+ switchport trunk allowed vlan {{ uplink_pc.allowed_vlans }}
+ spanning-tree portfast trunk
+ no shutdown
+
+{%- for ifc in uplink_pc.members %}
+interface {{ ifc }}
+ description Uplink to Aggregation member
+ switchport
+ switchport mode trunk
+ channel-protocol lacp
+ channel-group {{ uplink_pc.pc_id }} mode {{ uplink_pc.lacp_mode }}
+ no shutdown
+{%- endfor %}
+
+
