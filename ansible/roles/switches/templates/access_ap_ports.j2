@@ -1,1 +1,17 @@
-# Template puertos AP
+Puertos de AP con port‑security sticky
+ansible/roles/switches/templates/access_ap_ports.j2
+
+
+{%- for p in ap_ports %}
+interface {{ p }}
+ description AP-PORT
+ switchport mode access
+ switchport access vlan {{ ap_access_vlan }}
+ spanning-tree portfast
+ !
+ switchport port-security
+ switchport port-security maximum {{ max_macs | default(2) }}
+ switchport port-security mac-address sticky
+ switchport port-security violation {{ violation_action | default('restrict') }}
+ no shutdown
+{%- endfor %}
