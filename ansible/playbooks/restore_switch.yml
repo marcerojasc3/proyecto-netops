@@ -1,1 +1,31 @@
-# Playbook restauración switches
+Restauración (Proceso)
+1- Switches IOS‑XE — ansible/playbooks/restore_switch.yml
+
+---
+# Restaura running-config de un switch a partir del backup (merge o replace)
+- name: Restore switch config
+  hosts: "{{ target | default('access') }}"   # o "-l c9200-acc-01"
+  gather_facts: no
+  collections: [ cisco.ios ]
+  vars:
+    restore_date: "{{ date | default('YYYY-MM-DD') }}"
+    bk_file: "../../outputs/backups/switches/{{ restore_date }}/{{ inventory_hostname }}.cfg"
+    replace_mode: false   # true => reemplazo (cuidado); false => merge (seguro)
+  tasks:
+    - name: Verificar archivo backup
+      stat: { path: "{{ bk_file }}" }
+      register: st
+    - name: Abortar si no existe
+      fail:
+        msg: "No existe backup {{ bk_file }}"
+      when: not st.stat.exists
+
+    - name: Aplicar config
+      ios_config:
+        src: "{{ bk_file }}"
+        replace: "{{ 'running' if replace_mode else 'line' }}"
+        save_when: always
+
+Runbook (resumen):
+Merge (seguro) para reponer secciones faltantes.
+
