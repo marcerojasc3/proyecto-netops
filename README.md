@@ -723,7 +723,11 @@ ansible-playbook ansible/playbooks/provision_ap_ports.yml
 ansible-playbook ansible/playbooks/validate_ec_and_vlan.yml
 
 # 6) Backups
+Backups y restauración (cumplimiento del challenge)
 
+Backups diarios: backup_configs.yml + workflows nightly-backup.yml.
+Estructura por fecha y familia: outputs/backups/<familia>/<YYYY-MM-DD>/.
+Restore: restore_switch.yml, restore_asa.yml, restore_wlc.yml + docs/RUNBOOK_RESTORE.md.
 
 
 11. CI/CD (opcional – GitHub Actions)
