@@ -1,1 +1,21 @@
-# Script restauración ASA
+2- ASA — ansible/playbooks/restore_asa.yml + scripts/restore_asa.py
+
+---
+- name: Restore ASA config
+  hosts: firewall
+  gather_facts: no
+  vars:
+    restore_date: "{{ date | default('YYYY-MM-DD') }}"
+    bk_file: "../../outputs/backups/firewall/{{ restore_date }}/{{ inventory_hostname }}.cfg"
+  tasks:
+    - stat: { path: "{{ bk_file }}" }
+      register: st
+    - fail:
+        msg: "Backup ASA no existe {{ bk_file }}"
+      when: not st.stat.exists
+    - name: Push ASA restore (merge)
+      command: >
+        python3 ../../scripts/restore_asa.py
+        --host {{ ansible_host }}
+        --file {{ bk_file }}
+
