@@ -1,1 +1,13 @@
-# Variables ASA
+
+ansible/inventory/group_vars/firewall.yml (ASA Po10 + subinterfaces VLAN)
+
+asa_mode: "portchannel"      # usamos Port-channel
+
+vlans:
+  - { id: 900, nameif: mgmt-sw,   ip: 10.114.0.1,  mask: 255.255.255.192 }
+  - { id: 901, nameif: mgmt-ap,   ip: 10.114.2.1,  mask: 255.255.254.0   }
+  - { id: 304, nameif: wifi-data, ip: 10.114.4.1,  mask: 255.255.240.0   }
+
+po_id: 10
+po_members_stack1: [ "TenGigabitEthernet0/0", "TenGigabitEthernet0/1" ]
+po_members_stack2: [ "TenGigabitEthernet0/2", "TenGigabitEthernet0/3" ]
