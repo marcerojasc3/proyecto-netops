@@ -31,10 +31,10 @@ Diseñar y automatizar con patrones reproducibles y recuperables, usando **Ansib
 ## 2. Decisiones de Diseño (L2/L3)
 
 - **ASA como gateway L3 y DHCP central** para VLANs 900/901/304.
-- **ASA** con **Port‑channel único Po10** (LACP) y **subinterfaces 802.1Q** por VLAN. Las guías de Cisco indican que se soporta terminar múltiples VLAN como **subinterfaces** en un **EtherChannel** y que el ASA puede conectarse a dos equipos si éstos actúan como un **switch lógico** (vPC/VSS/StackWise Virtual), presentando un único LACP hacia el ASA.
+- **ASA** con **Port‑channel único Po10** (LACP) y **subinterfaces 802.1Q** por VLAN. Las guías de Cisco indican que se soporta terminar múltiples VLAN como **subinterfaces** en un **EtherChannel** y que el ASA puede conectarse a dos equipos si éstos actúan como un **switch lógico**, presentando un único LACP hacia el ASA.
 - **C9200 (Acceso):** Uplinks **trunk** hacia C9500; puertos donde conectan **APs** con **port‑security mac sticky** (modo access o trunk según modo de AP).
 - **APs**: Descubrimiento del **WLC 9800** vía **DHCP Option 43**.
-> **Nota:** Elegimos **Po10 único en ASA** porque garantiza **un solo gateway** por cada VLAN y evita conflictos de IP en múltiples interfaces. Si no se dispone de vPC/VSS/SV en distribución, la alternativa es **Redundant Interface** en ASA (activo/standby) con subinterfaces VLAN, manteniendo un solo gateway por VLAN.
+> **Nota:** Elegimos **Po10 único en ASA** porque garantiza **un solo gateway** por cada VLAN y evita conflictos de IP en múltiples interfaces. En distribución, la alternativa es **Redundant Interface** en ASA (activo/standby) con subinterfaces VLAN, manteniendo un solo gateway por VLAN.
 ---
 
 ## 3. Patrón de Aprovisionamiento
@@ -47,96 +47,9 @@ Diseñar y automatizar con patrones reproducibles y recuperables, usando **Ansib
 - **Validación post‑provisión:** EtherChannel “UP”, miembros “bundled” y reachability a gateways por VLAN.
 - **Backups diarios:** running‑config de switches y ASA.
 
----
-
-## 4. Estructura del repositorio
 
 
-proyecto-netops/
-├─ ansible/
-│  ├─ inventory/
-│  │  ├─ hosts.yml
-│  │  └─ group_vars/
-│  │     ├─ switches.yml
-│  │     ├─ firewall.yml
-│  │     └─ wlc.yml
-│  ├─ roles/
-│  │  ├─ switches/
-│  │  │  └─ templates/
-│  │  │     ├─ base_switch.j2
-│  │  │     ├─ agg_mec_to_asa.j2
-│  │  │     ├─ access_uplink_portchannel.j2
-│  │  │     └─ access_ap_ports.j2
-│  │  ├─ firewall/
-│  │  │  └─ templates/
-│  │  │     └─ asa_po_subifs.j2
-│  │  └─ wlc/
-│  │     └─ templates/
-│  │        └─ wlc_ssid.j2
-│  ├─ playbooks/
-│  │  ├─ provision_asa_uplink.yml
-│  │  ├─ provision_agg_mec_to_asa.yml
-│  │  ├─ provision_access_uplink.yml
-│  │  ├─ provision_switches.yml
-│  │  ├─ provision_wlc.yml
-│  │  ├─ provision_ap_ports.yml
-│  │  ├─ validate_ec_and_vlan.yml
-│  │  ├─ backup_configs.yml              ← (backups diarios)
-│  │  ├─ restore_switch.yml             ← (restauración switch)
-│  │  ├─ restore_asa.yml                ← (restauración ASA)
-│  │  └─ restore_wlc.yml                ← (restauración WLC)
-│  └─ files/
-│     ├─ restore/
-│     │  ├─ asa/
-│     │  │  └─ README_RESTORE_ASA.md
-│     │  ├─ switches/
-│     │  │  └─ README_RESTORE_SWITCH.md
-│     │  └─ wlc/
-│     │     └─ README_RESTORE_WLC.md
-├─ scripts/
-│  ├─ validate.py
-│  ├─ backup.py
-│  ├─ restore_asa.py
-│  ├─ restore_wlc.py
-│  └─ tools/
-│     └─ opt43_hex_helper.md            ← (ayuda para DHCP Option 43)
-├─ outputs/
-│  ├─ backups/
-│  │  ├─ switches/
-│  │  │  ├─ YYYY-MM-DD/
-│  │  │  │  ├─ c9200-acc-01.cfg
-│  │  │  │  └─ ...
-│  │  ├─ firewall/
-│  │  │  ├─ YYYY-MM-DD/
-│  │  │  │  └─ asa-edge.cfg
-│  │  └─ wlc/
-│  │     ├─ YYYY-MM-DD/
-│  │     │  └─ wlc9800.txt
-│  └─ reports/
-│     ├─ validate/
-│     │  ├─ YYYY-MM-DD/
-│     │  │  ├─ agg_show.txt
-│     │  │  ├─ access_show.txt
-│     │  │  └─ asa_po_summary.txt
-│     └─ backups/
-│        ├─ YYYY-MM-DD/
-│        │  └─ backup_summary.json
-├─ .github/
-│  └─ workflows/
-│     ├─ ci.yml                         ← (lint + smoke)
-│     └─ nightly-backup.yml             ← (backups diarios programados)
-├─ docs/
-│  ├─ topology.png
-│  ├─ workflow.md
-│  └─ RUNBOOK_RESTORE.md                ← (guía única de restauración)
-└─ README.md
-
-
-
-
-
-
-## 5. Inventario y Variables ()
+## 4. Inventario y Variables ()
 
 **`ansible/inventory/hosts.yml`**
 ```yaml
@@ -483,8 +396,7 @@ Comandos de validación en C9500/C9200 (show etherchannel summary, show interfac
 
 
 9. Backups diarios
-1- Playbook de backups: ansible/playbooks/backup_configs.yml
-
+ - Playbook de backups: ansible/playbooks/backup_configs.yml
 
 ---
 # Backups diarios de switches (IOS-XE), ASA y WLC
