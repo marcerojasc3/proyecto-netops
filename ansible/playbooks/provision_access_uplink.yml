@@ -1,1 +1,17 @@
-# Playbook uplink acceso
+C9200 uplink a C9500
+ansible/playbooks/provision_access_uplink.yml
+
+
+---
+- name: Configure Access uplink Port-channel to Aggregation
+  hosts: access
+  gather_facts: no
+  collections: [ cisco.ios ]
+  vars_files: [ ../inventory/group_vars/switches.yml ]
+  tasks:
+    - template:
+        src: ../roles/switches/templates/access_uplink_portchannel.j2
+        dest: /tmp/{{ inventory_hostname }}-acc-uplink.cfg
+    - ios_config:
+        src: /tmp/{{ inventory_hostname }}-acc-uplink.cfg
+        save_when: modified
