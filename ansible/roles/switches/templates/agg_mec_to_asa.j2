@@ -1,1 +1,22 @@
-# Template MEC hacia ASA
+C9500 → ASA (MEC) – trunk Po10
+ansible/roles/switches/templates/agg_mec_to_asa.j2
+
+
+interface Port-channel{{ agg_fw_pc.pc_id }}
+ description {{ agg_fw_pc.pc_desc }}
+ switchport
+ switchport mode trunk
+ switchport trunk allowed vlan {{ agg_fw_pc.allowed_vlans }}
+ spanning-tree portfast trunk
+ no shutdown
+
+{%- for ifc in members %}
+interface {{ ifc }}
+ description Uplink to ASA MEC member
+ switchport
+ switchport mode trunk
+ channel-protocol lacp
+ channel-group {{ agg_fw_pc.pc_id }} mode {{ agg_fw_pc.lacp_mode }}
+ no shutdown
+{%- endfor %}
+
