@@ -1,1 +1,19 @@
-# Playbook ASA uplink
+ASA uplink (Po10 + subinterfaces)
+ansible/playbooks/provision_asa_uplink.yml
+
+
+---
+- name: Configure ASA Port-channel Po10 + VLAN subinterfaces
+  hosts: firewall
+  gather_facts: no
+  tasks:
+    - template:
+        src: ../roles/firewall/templates/asa_po_subifs.j2
+        dest: /tmp/{{ inventory_hostname }}-asa-po.cfg
+
+    - name: Push ASA config (Netmiko wrapper)
+      command: >
+        python3 ../../scripts/validate.py
+        --device asa
+        --host {{ ansible_host }}
+        --file /tmp/{{ inventory_hostname }}-asa-po.cfg
