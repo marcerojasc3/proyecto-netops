@@ -1,1 +1,60 @@
-# Playbook WLC
+
+---
+- name: Crear WLAN (SSID) con PSK en WLC 9800 via RESTCONF
+  hosts: wlc
+  gather_facts: no
+  vars_files:
+    - ../inventory/group_vars/wlc.yml
+  tasks:
+    - name: Crear/activar WLAN
+      uri:
+        url: "https://{{ wlc_host }}{{ restconf_endpoints.wlan_cfg }}"
+        method: POST
+        user: "{{ wlc_user }}"
+        password: "{{ wlc_pass }}"
+        force_basic_auth: true
+        validate_certs: "{{ wlc_restconf_verify_tls }}"
+        headers:
+          Content-Type: "application/yang-data+json"
+        body_format: json
+        body:
+          Cisco-IOS-XE-wireless-wlan-cfg:wlan:
+            - name: "{{ wlan_name }}"
+              ssid: "{{ wlan_ssid }}"
+              status: "enable"
+      register: create_wlan
+      failed_when: create_wlan.status not in [200,201,204]
+
+    - name: Configurar política (PSK WPA2 + VLAN 304)
+      uri:
+        url: "https://{{ wlc_host }}{{ restconf_endpoints.policy_profile }}"
+        method: POST
+        user: "{{ wlc_user }}"
+        password: "{{ wlc_pass }}"
+        force_basic_auth: true
+        validate_certs: "{{ wlc_restconf_verify_tls }}"
+        headers:
+          Content-Type: "application/yang-data+json"
+        body_format: json
+        body:
+          Cisco-IOS-XE-wireless-policy:profile:
+            - profile-name: "{{ wlan_name }}"
+              wlan-profile: "{{ wlan_name }}"
+              # Seguridad simple con PSK WPA2
+              security:
+                wpa:
+                  wpa2: "{{ wlan_security.wpa2_psk }}"
+                  wpa3: "{{ wlan_security.wpa3 }}"
+                wpa-psk:
+                  ascii: "{{ wlan_security.psk_ascii }}"
+              # Mapeo a VLAN de datos (ASA es el GW)
+              vlan:
+                vlan-id: "{{ wifi_data_vlan }}"
+      register: set_policy
+      failed_when: set_policy.status not in [200,201,204]
+
+    - debug:
+        msg:
+          - "WLAN creada: {{ wlan_name }} / SSID: {{ wlan_ssid }}"
+          - "PSK configurado (WPA2={{ wlan_security.wpa2_psk }}, WPA3={{ wlan_security.wpa3 }})"
+          - "VLAN mapeada: {{ wifi_data_vlan }}"
