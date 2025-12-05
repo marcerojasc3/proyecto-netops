@@ -1,1 +1,17 @@
-# Playbook puertos AP
+AP ports (port‑security)
+ansible/playbooks/provision_ap_ports.yml
+
+---
+- name: Configure AP access ports with port-security sticky
+  hosts: access
+  gather_facts: no
+  collections: [ cisco.ios ]
+  vars_files: [ ../inventory/group_vars/switches.yml ]
+  tasks:
+    - template:
+        src: ../roles/switches/templates/access_ap_ports.j2
+        dest: /tmp/{{ inventory_hostname }}-ap-ports.cfg
+    - ios_config:
+        src: /tmp/{{ inventory_hostname }}-ap-ports.cfg
+        save_when: modified
+
