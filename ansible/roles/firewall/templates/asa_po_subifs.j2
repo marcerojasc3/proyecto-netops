@@ -1,1 +1,38 @@
-# Template ASA Po10 subinterfaces
+6. Plantillas Jinja2 (extractos)
+ASA – Po10 + subinterfaces (VLAN 900/901/304)
+ansible/roles/firewall/templates/asa_po_subifs.j2
+
+
+{# ASA: Port-channel Po{{ po_id }} + subinterfaces por VLAN #}
+{%- for intf in po_members_stack1 %}
+interface {{ intf }}
+ channel-group {{ po_id }} mode {{ lacp_mode }}
+ no nameif
+ no security-level
+ no ip address
+ no shutdown
+{%- endfor %}
+
+{%- for intf in po_members_stack2 %}
+interface {{ intf }}
+ channel-group {{ po_id }} mode {{ lacp_mode }}
+ no nameif
+ no security-level
+ no ip address
+ no shutdown
+{%- endfor %}
+
+interface Port-channel{{ po_id }}
+ no shutdown
+
+{%- for v in vlans %}
+interface Port-channel{{ po_id }}.{{ v.id }}
+ vlan {{ v.id }}
+ nameif {{ v.nameif }}
+ security-level 100
+ ip address {{ v.ip }} {{ v.mask }}
+ no shutdown
+{%- endfor %}
+
+
+
