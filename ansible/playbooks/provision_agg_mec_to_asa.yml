@@ -1,1 +1,35 @@
-# Playbook C9500 hacia ASA
+C9500 (Stack1/Stack2) → ASA (MEC)
+ansible/playbooks/provision_agg_mec_to_asa.yml
+
+---
+- name: Configure Aggregation Po10 trunk to ASA (Stack1)
+  hosts: c9500-stack1
+  gather_facts: no
+  collections: [ cisco.ios ]
+  vars_files: [ ../inventory/group_vars/switches.yml ]
+  vars:
+    members: "{{ agg_fw_pc.members_stack1 }}"
+  tasks:
+    - template:
+        src: ../roles/switches/templates/agg_mec_to_asa.j2
+        dest: /tmp/{{ inventory_hostname }}-agg-mec.cfg
+    - ios_config:
+        src: /tmp/{{ inventory_hostname }}-agg-mec.cfg
+        save_when: modified
+
+- name: Configure Aggregation Po10 trunk to ASA (Stack2)
+  hosts: c9500-stack2
+  gather_facts: no
+  collections: [ cisco.ios ]
+  vars_files: [ ../inventory/group_vars/switches.yml ]
+  vars:
+    members: "{{ agg_fw_pc.members_stack2 }}"
+  tasks:
+    - template:
+        src: ../roles/switches/templates/agg_mec_to_asa.j2
+        dest: /tmp/{{ inventory_hostname }}-agg-mec.cfg
+    - ios_config:
+        src: /tmp/{{ inventory_hostname }}-agg-mec.cfg
+
+
+
